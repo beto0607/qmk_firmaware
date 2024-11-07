@@ -55,13 +55,10 @@ oled_rotation_t oled_init_kb(oled_rotation_t rotation) {
     return rotation;
 }
 
-static void render_logo(void) {
-    static const char PROGMEM qmk_logo[] = {
-        0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,0x90,0x91,0x92,0x93,0x94,
-        0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,0xb0,0xb1,0xb2,0xb3,0xb4,
-        0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,0xd0,0xd1,0xd2,0xd3,0xd4,0
-    };
-    oled_write_P(qmk_logo, false);
+static void render_right_oled(void) {
+    oled_write_P(PSTR("\n\n"), false);
+    oled_write_ln_P(PSTR("You should"), false);
+    oled_write_ln_P(PSTR("be working"), false);
 }
 
 void print_status_narrow(void) {
@@ -85,13 +82,13 @@ void print_status_narrow(void) {
             oled_write_P(PSTR("Base\n"), false);
             break;
         case 2:
-            oled_write_P(PSTR("Raise"), false);
-            break;
-        case 3:
             oled_write_P(PSTR("Lower"), false);
             break;
+        case 3:
+            oled_write_P(PSTR("Raise"), false);
+            break;
         default:
-            oled_write_ln_P(PSTR("Undef"), false);
+            oled_write_ln_P(PSTR("Func"), false);
     }
     oled_write_P(PSTR("\n\n"), false);
     led_t led_usb_state = host_keyboard_led_state();
@@ -105,7 +102,7 @@ bool oled_task_kb(void) {
     if (is_keyboard_master()) {
         print_status_narrow();
     } else {
-        render_logo();
+        render_right_oled();
     }
     return true;
 }
@@ -117,19 +114,41 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     if (!encoder_update_user(index, clockwise)) {
         return false;
     }
-    if (index == 0) {
-        if (clockwise) {
-            tap_code(KC_VOLU);
-        } else {
+    if (index == 1) {// right hand - not working
+        if (clockwise) {// clockwise is inverted
             tap_code(KC_VOLD);
-        }
-    } else if (index == 1) {
-        if (clockwise) {
-            tap_code(KC_PGDN);
         } else {
-            tap_code(KC_PGUP);
+            tap_code(KC_VOLU);
+        }
+    } else if (index == 0) {// left hand
+        if (clockwise) {// clockwise is inverted
+            tap_code(MS_WHLD);
+        } else {
+            tap_code(MS_WHLU);
         }
     }
-    return true;
+    return false;
+}
+#endif
+
+#ifdef LEADER_ENABLE
+void leader_end_user(void) {
+    if (leader_sequence_one_key(KC_J)) {
+        tap_code16(LSG(KC_LEFT));
+    } else if (leader_sequence_one_key(KC_K)) {
+        tap_code16(LGUI(KC_DOWN));
+    } else if (leader_sequence_one_key(KC_I)) {
+        tap_code16(LGUI(KC_UP));
+    } else if (leader_sequence_one_key(KC_U)) {
+        tap_code16(LGUI(KC_LEFT));
+    } else if (leader_sequence_one_key(KC_O)) {
+        tap_code16(LGUI(KC_RIGHT));
+    } else if (leader_sequence_one_key(KC_L)) {
+        tap_code16(LSG(KC_RIGHT));
+    } else if(leader_sequence_one_key(KC_W)) {
+        tap_code16(KC_WWW_HOME);
+    } else if(leader_sequence_one_key(KC_T)) {
+        tap_code16(KC_MY_COMPUTER);
+    }
 }
 #endif
